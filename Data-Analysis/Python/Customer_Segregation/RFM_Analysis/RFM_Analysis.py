@@ -6,6 +6,7 @@
 
 import numpy as np 
 import pandas as pd
+import streamlit as st
 import matplotlib.pyplot as plt
 from pandas.plotting import scatter_matrix
 import seaborn as sns
@@ -17,6 +18,9 @@ import time, warnings
 import datetime as dt
 from pathlib import Path
 warnings.filterwarnings("ignore")
+
+st.set_page_config(page_title="RFM Customer Segmentation", layout="wide")
+st.title("Customer Segmentation using RFM Analysis")
 
 # ## Load and Preview Data
 # Load the dataset and preview the first few rows to understand its structure and data types.
@@ -39,10 +43,12 @@ data = pd.read_csv(
 )
 
 # Display the data types to verify
-print(data.dtypes)
+st.header("Load and Preview Data")
+st.write("Data types")
+st.dataframe(data.dtypes.astype(str).rename("Data type"))
 
 # Display the first few rows of the dataset
-data.head()
+st.dataframe(data.head())
 
 # ## Data Cleaning
 # Remove unnecessary columns and handle missing values.
@@ -51,13 +57,15 @@ data.head()
 clean_data = data.drop(columns=["InvoiceNo", "StockCode", "Description"]).dropna()
 
 # Display summary statistics of the cleaned data
-clean_data.describe()
+st.header("Data Cleaning")
+st.dataframe(clean_data.describe())
 
 # ## Exploratory Data Analysis
 # Understand the distribution of the data and identify the most significant market.
 
 # Display unique countries
-print(clean_data["Country"].unique())
+st.header("Exploratory Data Analysis")
+st.write("Countries:", clean_data["Country"].unique())
 
 # Group by 'Country' and count the number of occurrences
 grouped_data = clean_data.groupby('Country').count()
@@ -66,7 +74,7 @@ grouped_data = clean_data.groupby('Country').count()
 sorted_data = grouped_data.sort_values(by='Quantity', ascending=False)
 
 # Display the top countries
-sorted_data.head()
+st.dataframe(sorted_data.head())
 
 # ## Filter Data for United Kingdom
 # Since the highest data comes from the UK, we will focus our analysis on the UK market.
@@ -78,10 +86,12 @@ uk_data = clean_data[clean_data["Country"] == "United Kingdom"]
 uk_data.drop(columns=["Country"], inplace=True)
 
 # Display the filtered data
-print(uk_data.head())
+st.header("United Kingdom Analysis")
+st.dataframe(uk_data.head())
 
 # # Recency Analysis
 # Recency indicates how recently a customer made a purchase.
+st.header("Recency Analysis")
 
 # Group by CustomerID and aggregate by the maximum InvoiceDate to get the most recent purchase date
 customer_recency_data = uk_data.groupby('CustomerID').agg({'InvoiceDate': 'max'})
@@ -93,7 +103,7 @@ customer_recency_data.columns = ["Recent InvoiceDate"]
 customer_recency_data = customer_recency_data.reset_index()
 
 # Display the first few rows
-print(customer_recency_data.head())
+st.dataframe(customer_recency_data.head())
 
 # Calculate the "Recency" as the difference between now and the most recent InvoiceDate
 customer_recency_data["Recency"] = dt.datetime.now() - customer_recency_data["Recent InvoiceDate"]
@@ -102,7 +112,7 @@ customer_recency_data["Recency"] = dt.datetime.now() - customer_recency_data["Re
 customer_recency_data["Recency"] = customer_recency_data["Recency"].dt.days
 
 # Display the first few rows to verify
-print(customer_recency_data.head())
+st.dataframe(customer_recency_data.head())
 
 # Remove outliers using the interquartile range (IQR)
 Q1 = customer_recency_data["Recency"].quantile(0.25)
@@ -111,7 +121,7 @@ IQR = Q3 - Q1
 customer_recency_data = customer_recency_data[(customer_recency_data["Recency"] >= Q1 - 1.5 * IQR) & (customer_recency_data["Recency"] <= Q3 + 1.5 * IQR)]
 
 # Display the filtered data
-print(customer_recency_data.head())
+st.dataframe(customer_recency_data.head())
 
 # Normalize the "Recency" column using min-max normalization
 min_recency = customer_recency_data["Recency"].min()
@@ -122,16 +132,19 @@ customer_recency_data["Recency_normalized"] = customer_recency_data["Recency"].a
 customer_recency_data["Recency_normalized"] = 1 - customer_recency_data["Recency_normalized"]
 
 # Create a distribution plot for Recency_normalized
-sns.displot(customer_recency_data["Recency_normalized"], kde=True)
+recency_plot = sns.displot(customer_recency_data["Recency_normalized"], kde=True)
+st.pyplot(recency_plot.fig)
+plt.close(recency_plot.fig)
 
 # # Frequency Analysis
 # Frequency indicates how often a customer makes a purchase.
+st.header("Frequency Analysis")
 
 # Group by CustomerID and count the number of purchases to get the frequency
 customer_freq_data = uk_data.groupby('CustomerID').size().reset_index(name='Frequency')
 
 # Display the first few rows
-print(customer_freq_data.head())
+st.dataframe(customer_freq_data.head())
 
 # Remove outliers using the interquartile range (IQR)
 Q1 = customer_freq_data["Frequency"].quantile(0.25)
@@ -140,7 +153,7 @@ IQR = Q3 - Q1
 customer_freq_data = customer_freq_data[(customer_freq_data["Frequency"] >= Q1 - 1.5 * IQR) & (customer_freq_data["Frequency"] <= Q3 + 1.5 * IQR)]
 
 # Display the filtered data
-print(customer_freq_data.head())
+st.dataframe(customer_freq_data.head())
 
 # Normalize the "Frequency" column using min-max normalization
 min_freq = customer_freq_data["Frequency"].min()
@@ -148,13 +161,16 @@ max_freq = customer_freq_data["Frequency"].max()
 customer_freq_data["Frequency_normalized"] = customer_freq_data["Frequency"].apply(lambda x: (x - min_freq) / (max_freq - min_freq))
 
 # Display the first few rows to verify
-print(customer_freq_data.head())
+st.dataframe(customer_freq_data.head())
 
 # Create a distribution plot for Frequency_normalized
-sns.displot(customer_freq_data["Frequency_normalized"], kde=True)
+frequency_plot = sns.displot(customer_freq_data["Frequency_normalized"], kde=True)
+st.pyplot(frequency_plot.fig)
+plt.close(frequency_plot.fig)
 
 # # Monetary Value Analysis
 # Monetary value indicates how much money a customer spends.
+st.header("Monetary Value Analysis")
 
 # Calculate the total price for each purchase
 uk_data["Total Price"] = uk_data["UnitPrice"] * uk_data["Quantity"]
@@ -169,7 +185,7 @@ customer_monetary_data.columns = ["Monetary"]
 customer_monetary_data = customer_monetary_data.reset_index()
 
 # Display the first few rows
-print(customer_monetary_data.head())
+st.dataframe(customer_monetary_data.head())
 
 # Remove outliers using the interquartile range (IQR)
 Q1 = customer_monetary_data["Monetary"].quantile(0.25)
@@ -178,7 +194,7 @@ IQR = Q3 - Q1
 customer_monetary_data = customer_monetary_data[(customer_monetary_data["Monetary"] >= Q1 - 1.5 * IQR) & (customer_monetary_data["Monetary"] <= Q3 + 1.5 * IQR)]
 
 # Display the filtered data
-print(customer_monetary_data.head())
+st.dataframe(customer_monetary_data.head())
 
 # Normalize the "Monetary" column using min-max normalization
 min_mon = customer_monetary_data["Monetary"].min()
@@ -186,24 +202,28 @@ max_mon = customer_monetary_data["Monetary"].max()
 customer_monetary_data["Monetary_normalized"] = customer_monetary_data["Monetary"].apply(lambda x: (x - min_mon) / (max_mon - min_mon))
 
 # Display the first few rows to verify
-print(customer_monetary_data.head())
+st.dataframe(customer_monetary_data.head())
 
 # Create a distribution plot for Monetary_normalized
-sns.displot(customer_monetary_data["Monetary_normalized"], kde=True)
+monetary_plot = sns.displot(customer_monetary_data["Monetary_normalized"], kde=True)
+st.pyplot(monetary_plot.fig)
+plt.close(monetary_plot.fig)
 
 # # RFM Analysis with K-Means Clustering
 # Combine the normalized RFM components and perform clustering.
+st.header("RFM Analysis with K-Means Clustering")
 
 # Combine the normalized columns into a new DataFrame
 rfm_data = pd.concat([customer_recency_data["Recency_normalized"], customer_freq_data["Frequency_normalized"], customer_monetary_data["Monetary_normalized"]], axis=1)
 
 # Display the first few rows of the new DataFrame
-print(rfm_data.head())
+st.dataframe(rfm_data.head())
 
 # Remove NaN values as they were excluded during individual IQR analysis
 rfm_data.dropna(inplace=True)
 
 # # Determine the Optimal Number of Clusters using the Elbow Method
+st.subheader("Choose the Number of Clusters")
 
 # Define the range of K values to test
 k_range = range(1, 11)
@@ -223,11 +243,13 @@ plt.plot(k_range, inertia_values, marker='o')
 plt.xlabel('Number of clusters (K)')
 plt.ylabel('Inertia')
 plt.title('Elbow Method for Optimal K')
-plt.show()
+st.pyplot(plt.gcf())
+plt.close()
 
 # From the Elbow plot, we determine that K=4 is the optimal number of clusters.
 
 # # Perform K-Means Clustering
+st.subheader("K-Means Clustering")
 
 # Instantiate the KMeans model with 4 clusters
 kmeans = KMeans(n_clusters=4, random_state=42)
@@ -242,7 +264,7 @@ cluster_labels = kmeans.labels_
 rfm_data['Cluster'] = cluster_labels
 
 # Display the first few rows of the RFM data with cluster labels
-print(rfm_data.head())
+st.dataframe(rfm_data.head())
 
 # # Analyze the Clusters
 
@@ -254,7 +276,7 @@ rfm_data_cluster_avg = rfm_data.groupby('Cluster').agg({
 })
 
 # Display the result
-print(rfm_data_cluster_avg)
+st.dataframe(rfm_data_cluster_avg)
 
 # # Classify Clusters into Customer Segments
 # Based on the RFM values, classify the clusters into different customer segments.
@@ -281,9 +303,11 @@ column_names = {
 rfm_data_cluster_avg.rename(columns=column_names, inplace=True)
 
 # Display the result
-print(rfm_data_cluster_avg)
+st.header("Customer Segments")
+st.dataframe(rfm_data_cluster_avg)
 
 # # Visualize the Clusters
+st.header("Cluster Visualization")
 
 # Reduce dimensionality using PCA
 pca = PCA(n_components=3)
@@ -310,4 +334,5 @@ ax.set_title('Clusters Visualization')
 ax.legend()
 
 # Show plot
-plt.show()
+st.pyplot(fig)
+plt.close(fig)

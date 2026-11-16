@@ -76,13 +76,13 @@ This project is part of the `Data-Analysis` repository, located under `Python/Cu
    ```bash
    pip install -r requirements.txt
    ```
-4. Run the Jupyter notebook or the Python script:
+4. Run the Streamlit app or the Jupyter notebook:
    ```bash
-   jupyter notebook RFM_Analysis.ipynb
+   streamlit run RFM_Analysis.py
    ```
    or
    ```bash
-   python RFM_Analysis.py
+   jupyter notebook RFM_Analysis.ipynb
    ```
 
 ## Contributing
