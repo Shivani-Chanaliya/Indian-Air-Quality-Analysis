@@ -85,6 +85,9 @@ This project is part of the `Data-Analysis` repository, located under `Python/Cu
    jupyter notebook RFM_Analysis.ipynb
    ```
 
+The Streamlit app also includes Indian Air Quality and Auto Insurance analysis
+pages, available from the app's page navigation.
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or suggestions.
