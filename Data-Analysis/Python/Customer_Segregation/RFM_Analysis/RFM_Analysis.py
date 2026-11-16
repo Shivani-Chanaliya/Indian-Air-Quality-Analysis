@@ -15,14 +15,16 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 import time, warnings
 import datetime as dt
+from pathlib import Path
 warnings.filterwarnings("ignore")
 
 # ## Load and Preview Data
 # Load the dataset and preview the first few rows to understand its structure and data types.
 
 # Load the data with specified encoding and data types
+data_path = Path(__file__).resolve().parent / "data.csv"
 data = pd.read_csv(
-    './data.csv',
+    data_path,
     encoding="ISO-8859-1",
     dtype={
         'CustomerID': str,
